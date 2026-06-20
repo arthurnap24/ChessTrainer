@@ -26,3 +26,10 @@ change the number of green and orange shade levels from 6 shades to 4 shades
 * if more white covers a square, the square should be shaded green.
 * the shade of orange and green should be determined by subtracting the green and orange levels.
   - for example: if white covers a square 2 times and black 3 times, the shade of the square should be shade level 1 orange.
+
+Prompt 5:
+mixed improvements:
+* make shade level 1 a darker shade of green/orange
+* when the mouse hovers on top of a square, show text indicating coverage level and whether white or black owns the square. The coverage level is different from the shade level. Coverage is how many pieces can move to or attack a square.
+* show text showing the number of covered squares for both black and white pieces.
+* make the game window fixed width, make sure there is enough space for the text in the text panel 
