@@ -14,3 +14,7 @@ add feature to drag and drop and move the pieces:
 * do not add any legal move verification
 
 Prompt 3:
+break chess_trainer.py into 3 source files:
+* rules.py - add in_bounds, add_sliding, and compute_attacks
+* chess_board.py - add chess board rendering, drag and drop, and buttons
+* chess_trainer.py - where everything is tied together
