@@ -42,7 +42,7 @@ class ChessBoard:
 
         tk.Checkbutton(
             panel,
-            text="Highlight Squares",
+            text="Enable Heatmap",
             variable=self.highlight_on,
             command=self.draw,
         ).pack(anchor="w", pady=10)
