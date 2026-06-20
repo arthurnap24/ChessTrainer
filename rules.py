@@ -5,18 +5,18 @@ def in_bounds(r, c):
     return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
 
 
-def add_sliding(attacks, board, r, c, dirs):
+def add_sliding(attacks, board, r, c, dirs, empty_square_code):
     for dr, dc in dirs:
         rr, cc = r + dr, c + dc
         while in_bounds(rr, cc):
             attacks[rr][cc] += 1
-            if board[rr][cc] != "":
+            if board[rr][cc] != empty_square_code:
                 break
             rr += dr
             cc += dc
 
 
-def compute_attacks(board):
+def compute_attacks(board, empty_square_code=""):
     white = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
     black = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
 
@@ -53,10 +53,10 @@ def compute_attacks(board):
                         target[rr][cc] += 1
 
             elif piece == "b":
-                add_sliding(target, board, r, c, [(-1, -1), (-1, 1), (1, -1), (1, 1)])
+                add_sliding(target, board, r, c, [(-1, -1), (-1, 1), (1, -1), (1, 1)], empty_square_code)
 
             elif piece == "r":
-                add_sliding(target, board, r, c, [(-1, 0), (1, 0), (0, -1), (0, 1)])
+                add_sliding(target, board, r, c, [(-1, 0), (1, 0), (0, -1), (0, 1)], empty_square_code)
 
             elif piece == "q":
                 add_sliding(
@@ -68,6 +68,7 @@ def compute_attacks(board):
                         (-1, -1), (-1, 1), (1, -1), (1, 1),
                         (-1, 0), (1, 0), (0, -1), (0, 1),
                     ],
+                    empty_square_code,
                 )
 
             elif piece == "k":

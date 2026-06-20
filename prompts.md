@@ -32,4 +32,24 @@ mixed improvements:
 * make shade level 1 a darker shade of green/orange
 * when the mouse hovers on top of a square, show text indicating coverage level and whether white or black owns the square. The coverage level is different from the shade level. Coverage is how many pieces can move to or attack a square.
 * show text showing the number of covered squares for both black and white pieces.
-* make the game window fixed width, make sure there is enough space for the text in the text panel 
+* make the game window fixed width, make sure there is enough space for the text in the text panel
+
+Prompt 6:
+mixed improvements:
+* add right click feature to remove a piece from the board
+* turn these into Shade Level enums
+GREEN_SHADES = [
+    "#C0EFC0", "#9BE09B", "#5CCD5C", "#2EBA2E",
+]
+
+ORANGE_SHADES = [
+    "#FFB66E", "#FF9A42", "#F07F1F", "#DC6400",
+]
+* Turn these into (white/black) Pieces enums (Pawn, Rook, Knight, Bishop, King, Queen)
+PIECES = {
+    "K": "♔", "Q": "♕", "R": "♖", "B": "♗", "N": "♘", "P": "♙",
+    "k": "♚", "q": "♛", "r": "♜", "b": "♝", "n": "♞", "p": "♟",
+}
+* add a Piece enum called Empty square to replace instances of "" when referring to empty squares
+* when a square has the same coverage level, highlight it yellow
+* add undo shortcut Ctrl + Z and show help text on the text panel

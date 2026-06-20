@@ -1,5 +1,6 @@
 import copy
 import tkinter as tk
+from enum import Enum
 
 from rules import compute_attacks, in_bounds
 
@@ -10,19 +11,51 @@ PANEL_WIDTH = 320
 LIGHT = "#FFFFFF"
 DARK = "#B58863"
 CHECK_RED = "#FF4C4C"
+TIE_YELLOW = "#F2DD4A"
 
-GREEN_SHADES = [
-    "#C0EFC0", "#9BE09B", "#5CCD5C", "#2EBA2E",
-]
+class GreenShade(Enum):
+    LEVEL_1 = "#C0EFC0"
+    LEVEL_2 = "#9BE09B"
+    LEVEL_3 = "#5CCD5C"
+    LEVEL_4 = "#2EBA2E"
 
-ORANGE_SHADES = [
-    "#FFB66E", "#FF9A42", "#F07F1F", "#DC6400",
-]
 
-PIECES = {
-    "K": "♔", "Q": "♕", "R": "♖", "B": "♗", "N": "♘", "P": "♙",
-    "k": "♚", "q": "♛", "r": "♜", "b": "♝", "n": "♞", "p": "♟",
-}
+class OrangeShade(Enum):
+    LEVEL_1 = "#FFB66E"
+    LEVEL_2 = "#FF9A42"
+    LEVEL_3 = "#F07F1F"
+    LEVEL_4 = "#DC6400"
+
+
+class Piece(Enum):
+    EMPTY_SQUARE = ("", "")
+    WHITE_PAWN = ("P", "♙")
+    WHITE_ROOK = ("R", "♖")
+    WHITE_KNIGHT = ("N", "♘")
+    WHITE_BISHOP = ("B", "♗")
+    WHITE_KING = ("K", "♔")
+    WHITE_QUEEN = ("Q", "♕")
+    BLACK_PAWN = ("p", "♟")
+    BLACK_ROOK = ("r", "♜")
+    BLACK_KNIGHT = ("n", "♞")
+    BLACK_BISHOP = ("b", "♝")
+    BLACK_KING = ("k", "♚")
+    BLACK_QUEEN = ("q", "♛")
+
+    @property
+    def code(self):
+        return self.value[0]
+
+    @property
+    def glyph(self):
+        return self.value[1]
+
+    @classmethod
+    def from_code(cls, code):
+        for piece in cls:
+            if piece.code == code:
+                return piece
+        return cls.EMPTY_SQUARE
 
 
 class ChessBoard:
@@ -71,22 +104,64 @@ class ChessBoard:
         )
         self.hover_info_label.pack(anchor="w", pady=(6, 0))
 
+        self.help_label = tk.Label(
+            panel,
+            text=(
+                "Help\n"
+                "- Drag + drop: move piece\n"
+                "- Right click: remove piece\n"
+                "- Ctrl+Z: undo last change"
+            ),
+            justify="left",
+            wraplength=PANEL_WIDTH - 20,
+        )
+        self.help_label.pack(anchor="w", pady=(10, 0))
+
         self.drag_piece = None
         self.drag_from = None
+        self.pending_undo_state = None
+        self.history = []
         self.last_white_att = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.last_black_att = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
 
         self.canvas.bind("<Button-1>", self.mouse_down)
+        self.canvas.bind("<Button-3>", self.mouse_right_click)
         self.canvas.bind("<B1-Motion>", self.mouse_move)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_up)
         self.canvas.bind("<Motion>", self.mouse_hover)
+        self.root.bind_all("<Control-z>", self.undo_shortcut)
+        self.root.bind_all("<Control-Z>", self.undo_shortcut)
 
         self.draw()
 
+    def snapshot_board(self):
+        return [row[:] for row in self.board]
+
+    def push_history(self, board_state=None):
+        state = self.snapshot_board() if board_state is None else [row[:] for row in board_state]
+        self.history.append(state)
+        if len(self.history) > 200:
+            self.history.pop(0)
+
+    def undo_shortcut(self, _event=None):
+        if not self.history:
+            return "break"
+
+        previous_state = self.history.pop()
+        self.board[:] = [row[:] for row in previous_state]
+        self.drag_piece = None
+        self.drag_from = None
+        self.pending_undo_state = None
+        self.draw()
+        return "break"
+
     def reset_board(self):
+        if self.board != self.initial_board:
+            self.push_history()
         self.board[:] = [row[:] for row in self.initial_board]
         self.drag_piece = None
         self.drag_from = None
+        self.pending_undo_state = None
         self.draw()
 
     def mouse_down(self, event):
@@ -96,8 +171,9 @@ class ChessBoard:
 
         self.drag_piece = self.board[r][c]
         if self.drag_piece:
+            self.pending_undo_state = self.snapshot_board()
             self.drag_from = (r, c)
-            self.board[r][c] = ""
+            self.board[r][c] = Piece.EMPTY_SQUARE.code
 
     def mouse_move(self, event):
         self.draw()
@@ -105,7 +181,7 @@ class ChessBoard:
             self.canvas.create_text(
                 event.x,
                 event.y,
-                text=PIECES[self.drag_piece],
+                text=Piece.from_code(self.drag_piece).glyph,
                 font=("Arial", 36),
             )
 
@@ -119,8 +195,24 @@ class ChessBoard:
                 fr, fc = self.drag_from
                 self.board[fr][fc] = self.drag_piece
 
+        if self.pending_undo_state is not None and self.board != self.pending_undo_state:
+            self.push_history(self.pending_undo_state)
+
         self.drag_piece = None
         self.drag_from = None
+        self.pending_undo_state = None
+        self.draw()
+
+    def mouse_right_click(self, event):
+        r, c = event.y // SQUARE, event.x // SQUARE
+        if not in_bounds(r, c):
+            return
+
+        if self.board[r][c] == Piece.EMPTY_SQUARE.code:
+            return
+
+        self.push_history()
+        self.board[r][c] = Piece.EMPTY_SQUARE.code
         self.draw()
 
     def mouse_hover(self, event):
@@ -156,15 +248,15 @@ class ChessBoard:
                     bk = (r, c)
         return wk, bk
 
-    def shade(self, count, palette):
+    def shade(self, count, palette_enum):
         if count <= 0:
             return None
-        return palette[min(count, 4) - 1]
+        return palette_enum[f"LEVEL_{min(count, 4)}"].value
 
     def draw(self):
         self.canvas.delete("all")
 
-        white_att, black_att = compute_attacks(self.board)
+        white_att, black_att = compute_attacks(self.board, Piece.EMPTY_SQUARE.code)
         self.last_white_att = white_att
         self.last_black_att = black_att
 
@@ -186,9 +278,11 @@ class ChessBoard:
                     diff = w - b
 
                     if diff > 0:
-                        color = self.shade(diff, GREEN_SHADES)
+                        color = self.shade(diff, GreenShade)
                     elif diff < 0:
-                        color = self.shade(-diff, ORANGE_SHADES)
+                        color = self.shade(-diff, OrangeShade)
+                    elif w > 0:
+                        color = TIE_YELLOW
 
                 if wking == (r, c) and black_att[r][c] > 0:
                     color = CHECK_RED
@@ -206,9 +300,10 @@ class ChessBoard:
 
                 p = self.board[r][c]
                 if p:
+                    piece = Piece.from_code(p)
                     self.canvas.create_text(
                         c * SQUARE + SQUARE // 2,
                         r * SQUARE + SQUARE // 2,
-                        text=PIECES[p],
+                        text=piece.glyph,
                         font=("Arial", 36),
                     )
