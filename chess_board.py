@@ -11,13 +11,11 @@ DARK = "#B58863"
 CHECK_RED = "#FF4C4C"
 
 GREEN_SHADES = [
-    "#E6FFE6", "#CCF5CC", "#A0EBA0",
-    "#78DC78", "#50C850", "#1EAA1E",
+    "#E6FFE6", "#B8EDB8", "#78DC78", "#2EBA2E",
 ]
 
 ORANGE_SHADES = [
-    "#FFF0DC", "#FFDCB4", "#FFC88C",
-    "#FFAA5A", "#FF8C28", "#DC6400",
+    "#FFF0DC", "#FFC88C", "#FF9A42", "#DC6400",
 ]
 
 PIECES = {
@@ -120,14 +118,7 @@ class ChessBoard:
     def shade(self, count, palette):
         if count <= 0:
             return None
-        return palette[min(count, 6) - 1]
-
-    def mixed_color(self, green_hex, orange_hex):
-        return "#{:02X}{:02X}{:02X}".format(
-            (int(green_hex[1:3], 16) + int(orange_hex[1:3], 16)) // 2,
-            (int(green_hex[3:5], 16) + int(orange_hex[3:5], 16)) // 2,
-            (int(green_hex[5:7], 16) + int(orange_hex[5:7], 16)) // 2,
-        )
+        return palette[min(count, 4) - 1]
 
     def draw(self):
         self.canvas.delete("all")
@@ -142,16 +133,12 @@ class ChessBoard:
                 if self.highlight_on.get():
                     w = white_att[r][c]
                     b = black_att[r][c]
+                    diff = w - b
 
-                    if w > 0 and b == 0:
-                        color = self.shade(w, GREEN_SHADES)
-                    elif b > 0 and w == 0:
-                        color = self.shade(b, ORANGE_SHADES)
-                    elif w > 0 and b > 0:
-                        g = self.shade(w, GREEN_SHADES)
-                        o = self.shade(b, ORANGE_SHADES)
-                        if g and o:
-                            color = self.mixed_color(g, o)
+                    if diff > 0:
+                        color = self.shade(diff, GREEN_SHADES)
+                    elif diff < 0:
+                        color = self.shade(-diff, ORANGE_SHADES)
 
                 if wking == (r, c) and black_att[r][c] > 0:
                     color = CHECK_RED
